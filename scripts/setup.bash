@@ -1,6 +1,6 @@
 PACKAGE_DIR="$( cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd )"
-FIRMWARE_DIR="$HOME/src/Firmware"
-FIRMWARE_BUILD_DIR="$HOME/src/Firmware/build/px4_sitl_default"
+FIRMWARE_DIR="/root/src/Firmware"
+FIRMWARE_BUILD_DIR="/root/src/Firmware/build/px4_sitl_default"
 
 pushd .
 
