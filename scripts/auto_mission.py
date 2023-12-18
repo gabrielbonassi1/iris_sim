@@ -9,12 +9,15 @@ import rospy # Biblioteca do ROS para Python
 
 # Classes das mensagens e servicos
 from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import TwistStamped
 from mavros_msgs.srv import SetMode, CommandBool
 from mavros_msgs.msg import State
 from mavros_msgs.msg import ExtendedState
+
+from tf.transformations import quaternion_from_euler
     
 # Inicializa o node
-rospy.init_node("takeoff_land")
+rospy.init_node("auto_mission")
 
 # ================================
 # === PUBLISHERS E SUBSCRIBERS ===
@@ -25,6 +28,7 @@ current_state = State()
 current_pose = PoseStamped()
 goal_pose = PoseStamped()
 extended_state = ExtendedState()
+cmd_vel = TwistStamped()
 
 # Frequencia de publicacao do setpoint
 rate = rospy.Rate(20)
@@ -51,6 +55,7 @@ arm = rospy.ServiceProxy('/mavros/cmd/arming', CommandBool)
 set_mode_srv = rospy.ServiceProxy('/mavros/set_mode', SetMode)
 local_position_pub = rospy.Publisher('/mavros/setpoint_position/local', PoseStamped, queue_size=10)
 state_sub = rospy.Subscriber("/mavros/state", State, state_callback)
+cmd_vel_pub = rospy.Publisher('/mavros/setpoint_velocity/cmd_vel', TwistStamped, queue_size=10)
 pose_sub = rospy.Subscriber("/mavros/local_position/pose", PoseStamped, pose_callback)
 extended_state_sub = rospy.Subscriber("/mavros/extended_state", ExtendedState, extended_state_callback)
 
@@ -90,8 +95,6 @@ if (not current_state.armed):
 else:
     rospy.loginfo("Drone ja armado")
 
-
-
 # =============================
 # === MOVIMENTACAO DO DRONE ===
 # =============================
@@ -99,29 +102,44 @@ else:
 # Tolerancia de posicionamento
 TOL = 0.1
 
+# drone deve subir (quanto?) e girar 360 graus (como garantir que ele gira 360 graus?)
+
+# subindo:
+"""
+Formato da mensagem geometry_msgs/PoseStamped, que controla a posição do drone
+std_msgs/Header header
+  uint32 seq
+  time stamp
+  string frame_id
+geometry_msgs/Pose pose
+  geometry_msgs/Point position
+    float64 x
+    float64 y
+    float64 z
+  geometry_msgs/Quaternion orientation
+    float64 x
+    float64 y
+    float64 z
+    float64 w
+
+Pra subir, queremos mexer no geometry_msgs.pose.position.z
+"""
+
 rospy.loginfo("Subindo")
 goal_pose.pose.position.z = 5
 while not rospy.is_shutdown() and abs(goal_pose.pose.position.z - current_pose.pose.position.z) > TOL:
     local_position_pub.publish(goal_pose)
     rate.sleep()
 
-rospy.loginfo("Esperando")
-t0 = rospy.Time.now()
-while not rospy.is_shutdown() and rospy.Time.now() - t0 < rospy.Duration(5):
-    local_position_pub.publish(goal_pose)
-    rate.sleep()
+# girando 360 graus
 
-rospy.loginfo("Para frente")
-goal_pose.pose.position.x = 5
-while not rospy.is_shutdown() and abs(goal_pose.pose.position.x - current_pose.pose.position.x) > TOL:
-    local_position_pub.publish(goal_pose)
-    rate.sleep()
+rospy.loginfo("Girando 360 graus")
 
-rospy.loginfo("Esperando")
-t0 = rospy.Time.now()
-while not rospy.is_shutdown() and rospy.Time.now() - t0 < rospy.Duration(5):
-    local_position_pub.publish(goal_pose)
-    rate.sleep()
+
+
+
+
+
 
 # Coloca no modo Land
 if (current_state.mode != "AUTO.LAND"):
@@ -164,4 +182,4 @@ while not rospy.is_shutdown() and i<3:
 #Espera o usuario pressionar Ctrl+C
 while not rospy.is_shutdown():
     print("Pressione Ctrl+C para encerrar a simulacao")
-    multiple_rate_sleep(100)       
+    multiple_rate_sleep(100)

@@ -63,7 +63,7 @@ def camera_callback(message):
         #Image from Drone Camera published in ROS topic
     assert cv_image is not None, "file could not be read, check with os.path.exists()"
         #Baloon's template image
-    template = cv.imread('template_baloon.png', cv.IMREAD_GRAYSCALE)
+    template = cv.imread('./template_baloon.png', cv.IMREAD_GRAYSCALE)
     assert template is not None, "file could not be read, check with os.path.exists()"
 
     cv_image = cv.cvtColor(cv_image, cv.COLOR_BGR2GRAY)
