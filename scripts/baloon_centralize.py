@@ -11,6 +11,7 @@ import time
 from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import PoseStamped
 import numpy as np
+from tf.transformations import euler_from_quaternion
 
 #rospy.init_node("baloon_centralizer")
 
@@ -148,7 +149,7 @@ print("Centralizing Baloon")
 #horizontal_error = 0
 t0 = rospy.Time.now()
 while not rospy.is_shutdown() and abs(horizontal_error) > TOLhorizontal_error and not timeout(t0,5,"horizontal adjustment"):
-    yaw = tf.transformations.euler_from_quaternion([current_pose.pose.orientation.x, current_pose.pose.orientation.y, current_pose.pose.orientation.z, current_pose.pose.orientation.w])[2]
+    yaw = euler_from_quaternion([current_pose.pose.orientation.x, current_pose.pose.orientation.y, current_pose.pose.orientation.z, current_pose.pose.orientation.w])[2]
     
     speed_intensity = control_x.pid(0,horizontal_error,Kp_h,Ti_h,Td_h,N_h,sat_h,Ts)
     direction_array = np.array([0,speed_intensity,0])

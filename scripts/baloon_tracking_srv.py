@@ -15,8 +15,6 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import Int64
 from std_msgs.msg import Bool
 
-import os
-
 
 #====================================
 # Useful Custom Functions
@@ -32,31 +30,33 @@ def resized_templates(template,scale_percentages):
         templates.append(resized)
     return templates
 
+def baloon_tracker():
+    try:
+        print("\nCreating image subscriber...")
+        rospy.Subscriber('/iris/usb_cam/image_raw', Image, camera_callback)
+        print("Subscriber created!")
+    except:
+        print('Error trying to create subscribers!')
 
-#====================================
-#  ROS Setup
-#====================================
-
-rospy.init_node("baloon_tracker")
-
-rate = rospy.Rate(60)
-
-# Bridge ros-opencv
-bridge_object = CvBridge()
-
-# Post detection image publisher
-cv_image = Image()
-
-horizontal_error  = 0
-vertical_error = 0
-
-# Publisher
-pub_hori_error = rospy.Publisher('/baloon_tracking/horizontal_error', Int64, queue_size=10)  
-pub_vert_error = rospy.Publisher('/baloon_tracking/vertical_error', Int64, queue_size=10)
-found_baloon_pub = rospy.Publisher('/baloon_tracking/found_baloon', Bool, queue_size=10)
 #-- Get new frame
 def camera_callback(message):
+    rospy.init_node("baloon_tracker")
 
+    rate = rospy.Rate(60)
+    
+    # Bridge ros-opencv
+    bridge_object = CvBridge()
+    
+    # Post detection image publisher
+    cv_image = Image()
+    
+    horizontal_error  = 0
+    vertical_error = 0
+    
+    # Publisher
+    pub_hori_error = rospy.Publisher('baloon_tracking/horizontal_error', Int64, queue_size=10)  
+    pub_vert_error = rospy.Publisher('baloon_tracking/vertical_error', Int64, queue_size=10)
+    found_baloon_pub = rospy.Publisher('baloon_tracking/found_baloon', Bool, queue_size=10)  
     # Bridge de ROS para CV
     cv_image = bridge_object.imgmsg_to_cv2(message, "bgr8")
     #====================================
@@ -65,7 +65,7 @@ def camera_callback(message):
         #Image from Drone Camera published in ROS topic
     assert cv_image is not None, "file could not be read, check with os.path.exists()"
         #Baloon's template image
-    template = cv.imread(os.getcwd() + '/template_baloon.png', cv.IMREAD_GRAYSCALE)
+    template = cv.imread('./template_baloon.png', cv.IMREAD_GRAYSCALE)
     assert template is not None, "file could not be read, check with os.path.exists()"
 
     cv_image = cv.cvtColor(cv_image, cv.COLOR_BGR2GRAY)
@@ -77,10 +77,9 @@ def camera_callback(message):
     dim = (width, height)
     template_resized = cv.resize(template, dim, interpolation = cv.INTER_AREA)
 
-    #meth = 'cv.TM_CCOEFF_NORMED'
-    #method = eval(meth)
+    meth = 'cv.TM_CCOEFF_NORMED'
+    method = eval(meth)
 
-    method = cv.TM_CCOEFF_NORMED
     #Gaussian Filter
     #cv_image = cv.GaussianBlur(cv_image,(5,5),0)
     
@@ -124,12 +123,3 @@ def camera_callback(message):
         cv.waitKey(1)
 
     cv.imshow(detect_string,cv_image)
-
-try:
-    print("\nCreating image subscriber...")
-    rospy.Subscriber('/iris/usb_cam/image_raw', Image, camera_callback)
-    print("Subscriber created!")
-except:
-    print('Error trying to create subscribers!')
-
-rospy.spin()

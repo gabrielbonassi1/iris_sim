@@ -20,6 +20,7 @@ import termios
 import tty
 import numpy as np
 import tf
+import os
 
 import subprocess
 
@@ -78,7 +79,8 @@ def drone_reference(direction_array,yaw):
 def centralize_baloon():
     # Run the other script to centralize the baloon
     #subprocess.run(["python3", "baloon_centralize.py"])    
-    with open("baloon_centralize.py") as f:
+    cwd = os.getcwd()
+    with open(cwd + "/baloon_centralize.py") as f:
         exec(f.read())
     
 # Inicializa o node
